@@ -1,0 +1,68 @@
+version: '3.1'
+volumes:
+  mysql-volume: 
+  ghost-volume:
+
+services:
+ mysql:
+  image: mysql
+  container_name: mysql
+  volumes:
+    - ./var/lib/mysql
+  environment:
+    MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+    MYSQL_ROOT_PASSWORD: admin
+    MYSQL_DATABASE: mysql
+    MYSQL_USER: dev
+    MYSQL_HOST: mysql
+    MYSQL_PORT: 3306
+    MYSQL_PASSWORD: admin
+    MYSQL_SSL: 'false'
+  ports:
+  - 3306:3306
+  healthcheck:
+    test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+    timeout: 20s
+    retries: 10
+
+ ghost-1:
+  build: ./ghost
+  # image: lvthillo/ghost:1.20.0
+  image: lvthillo/ghost
+  container_name: ghost-1
+  volumes:
+    - ./var/lib/ghost
+  restart: always
+  ports:
+    - 8081:2368
+  environment:
+    database__client: mysql
+    database__connection__host: mysql
+    database__connection__user: dev
+    database__connection__password: admin
+    database__connection__database: mysql
+  depends_on:
+    - mysql
+  entrypoint: ["wait-for-it.sh", "mysql", "--", "docker-entrypoint.sh"]
+  command: ["node", "current/index.js"]
+
+ ghost-2:
+  build: ./ghost
+  # image: lvthillo/ghost:1.20.0
+  image: lvthillo/ghost
+  container_name: ghost-2
+  volumes:
+    - ./var/lib/ghost
+  restart: always
+  ports:
+    - 8082:2368
+  environment:
+    database__client: mysql
+    database__connection__host: mysql
+    database__connection__user: dev
+    database__connection__password: admin
+    database__connection__database: mysql
+  depends_on:
+    - mysql
+  entrypoint: ["wait-for-it.sh", "mysql", "--", "docker-entrypoint.sh"]
+  command: ["node", "current/index.js"]
